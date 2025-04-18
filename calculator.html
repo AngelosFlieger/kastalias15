@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>House Energy Cost with Pagio</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background: #f0f2f5;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 500px;
+    }
+
+    h2, h3 {
+      text-align: center;
+      color: #333;
+    }
+
+    label {
+      display: block;
+      margin: 15px 0 5px;
+      font-weight: bold;
+      color: #444;
+    }
+
+    input[type="number"] {
+      width: 100%;
+      padding: 8px;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      margin-top: 20px;
+      background-color: #007bff;
+      border: none;
+      color: white;
+      font-size: 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    .results {
+      margin-top: 25px;
+      padding: 20px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    .results b {
+      color: #222;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h2>Υπολογισμός</h2>
+
+    <label>Συνολικές Ώρες:</label>
+    <input type="number" id="totalHours" />
+
+    <label>Συνολική Χρέωση:</label>
+    <input type="number" id="totalCost" />
+
+    <h3>Ώρες χρήσης ανά σπίτι</h3>
+
+    <label>Κώστας:</label>
+    <input type="number" id="kostasHours" />
+
+    <label>Φλίγγερ:</label>
+    <input type="number" id="fliggerHours" />
+
+    <label>Βασίλης:</label>
+    <input type="number" id="vasilisHours" />
+
+    <label>Μπάρμπη:</label>
+    <input type="number" id="barbiHours" />
+
+    <button onclick="calculate()">Υπολόγισε</button>
+
+    <div class="results" id="results"></div>
+  </div>
+
+  <script>
+    function calculate() {
+      const sizes = {
+        kostas: 323,
+        fligger: 323,
+        vasilis: 235,
+        barbi: 119
+      };
+
+      const hours = {
+        kostas: parseFloat(document.getElementById('kostasHours').value) || 0,
+        fligger: parseFloat(document.getElementById('fliggerHours').value) || 0,
+        vasilis: parseFloat(document.getElementById('vasilisHours').value) || 0,
+        barbi: parseFloat(document.getElementById('barbiHours').value) || 0
+      };
+
+      const totalCost = parseFloat(document.getElementById('totalCost').value);
+      const totalHours = parseFloat(document.getElementById('totalHours').value);
+
+      const fixedPercentage = 0.20;
+      const variablePercentage = 0.80;
+
+      const fixedCost = totalCost * fixedPercentage;
+      const variableCost = totalCost * variablePercentage;
+
+      const weights = {
+        kostas: hours.kostas * sizes.kostas,
+        fligger: hours.fligger * sizes.fligger,
+        vasilis: hours.vasilis * sizes.vasilis,
+        barbi: hours.barbi * sizes.barbi
+      };
+
+      const totalWeight = Object.values(weights).reduce((a, b) => a + b, 0);
+      const costPerUnit = variableCost / totalWeight;
+
+      const result = {};
+
+      for (let key in sizes) {
+        const usageCost = weights[key] * costPerUnit;
+        const pagio = (fixedCost * sizes[key]) / 1000;
+        const total = usageCost + pagio;
+        result[key] = {
+          usageCost: usageCost.toFixed(2),
+          pagio: pagio.toFixed(2),
+          total: total.toFixed(2)
+        };
+      }
+
+      const display = `
+        <strong>Αποτέλεσμα:</strong><br/><br/>
+        <b>Κώστας</b><br/>
+        Κόστος χωρίς πάγιο: €${result.kostas.usageCost}<br/>
+        Πάγιο: €${result.kostas.pagio}<br/>
+        <b>Συνολικά: €${result.kostas.total}</b><br/><br/>
+
+        <b>Φλίγγερ</b><br/>
+        Κόστος χωρίς πάγιο: €${result.fligger.usageCost}<br/>
+        Πάγιο: €${result.fligger.pagio}<br/>
+        <b>Συνολικά: €${result.fligger.total}</b><br/><br/>
+
+        <b>Βασίλης</b><br/>
+        Κόστος χωρίς πάγιο: €${result.vasilis.usageCost}<br/>
+        Πάγιο: €${result.vasilis.pagio}<br/>
+        <b>Συνολικά: €${result.vasilis.total}</b><br/><br/>
+
+        <b>Μπαρμπη</b><br/>
+        Κόστος χωρίς πάγιο: €${result.barbi.usageCost}<br/>
+        Πάγιο: €${result.barbi.pagio}<br/>
+        <b>Συνολικά: €${result.barbi.total}</b>
+      `;
+
+      document.getElementById('results').innerHTML = display;
+    }
+  </script>
+
+</body>
+</html>
