@@ -1,92 +1,141 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta charset="UTF-8">
   <title>House Energy Cost with Pagio</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
     * {
-      box-sizing: border-box;
-    }
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
 
-    body {
-      font-family: Arial, sans-serif;
-      background: #f0f2f5;
-      display: flex;
-      justify-content: center;
-      align-items: flex-start;
-      min-height: 100vh;
-      padding: 40px 20px;
-    }
+body {
+  font-family: Arial, sans-serif;
+  background: #f0f2f5;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 100vh;
+  padding: 80px 20px 20px;
+}
 
-    .container {
-      background: white;
-      padding: 30px;
-      border-radius: 12px;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-      width: 100%;
-      max-width: 500px;
-    }
+#dateDisplay {
+  position: absolute;
+  top: 15px;
+  left: 20px;
+  font-size: 14px;
+  font-weight: bold;
+}
 
-    h2, h3 {
-      text-align: center;
-      color: #333;
-    }
+.container {
+  background: white;
+  padding: 30px 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 500px;
+}
 
-    label {
-      display: block;
-      margin: 15px 0 5px;
-      font-weight: bold;
-      color: #444;
-    }
+h2, h3 {
+  text-align: center;
+  color: #333;
+  margin-bottom: 15px;
+}
 
-    input[type="number"] {
-      width: 100%;
-      padding: 8px;
-      font-size: 14px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-    }
+label {
+  display: block;
+  margin: 15px 0 5px;
+  font-weight: bold;
+  color: #444;
+}
 
-    button {
-      width: 100%;
-      padding: 12px;
-      margin-top: 20px;
-      background-color: #007bff;
-      border: none;
-      color: white;
-      font-size: 16px;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: background-color 0.2s;
-    }
+input[type="number"] {
+  width: 100%;
+  padding: 10px;
+  font-size: 15px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  margin-bottom: 10px;
+}
 
-    button:hover {
-      background-color: #0056b3;
-    }
+button {
+  width: 100%;
+  padding: 14px;
+  margin-top: 15px;
+  background-color: #007bff;
+  border: none;
+  color: white;
+  font-size: 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
 
-    .results {
-      margin-top: 25px;
-      padding: 20px;
-      background: #f8f9fa;
-      border-radius: 8px;
-      font-size: 15px;
-      line-height: 1.6;
-    }
+button:hover {
+  background-color: #0056b3;
+}
 
-    .results b {
-      color: #222;
-    }
+.results {
+  margin-top: 25px;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  font-size: 15px;
+  line-height: 1.6;
+  overflow-x: auto;
+}
+
+.results b {
+  color: #222;
+}
+
+/* ✅ Responsive tweaks for smaller devices */
+@media (max-width: 600px) {
+  body {
+    padding: 60px 10px 20px;
+  }
+
+  .container {
+    padding: 20px 15px;
+    box-shadow: none;
+    border-radius: 0;
+  }
+
+  input[type="number"] {
+    font-size: 14px;
+    padding: 8px;
+  }
+
+  button {
+    padding: 12px;
+    font-size: 15px;
+  }
+
+  #dateDisplay {
+    font-size: 13px;
+    top: 10px;
+    left: 10px;
+  }
+
+  .results {
+    font-size: 14px;
+    padding: 15px;
+  }
+}
+
   </style>
 </head>
 <body>
 
+  <div id="dateDisplay"></div>
+
   <div class="container">
-    <h2>Υπολογισμός</h2>
+    <h2>Υπολογισμός Κόστους</h2>
 
-    <label>Συνολικές Ώρες:</label>
-    <input type="number" id="totalHours" />
-
-    <label>Συνολική Χρέωση:</label>
+    <label>Συνολική Χρέωση (€):</label>
     <input type="number" id="totalCost" />
 
     <h3>Ώρες χρήσης ανά σπίτι</h3>
@@ -104,11 +153,22 @@
     <input type="number" id="barbiHours" />
 
     <button onclick="calculate()">Υπολόγισε</button>
+    <button id="downloadBtn" onclick="savePDF()" style="display: none;">Αποθήκευση σε PDF</button>
 
     <div class="results" id="results"></div>
   </div>
 
   <script>
+    let finalText = '';
+
+    // Display today's date in Greek format
+    window.onload = () => {
+      const today = new Date();
+      const day = String(today.getDate()).padStart(2, '0');
+      const month = String(today.getMonth() + 1).padStart(2, '0');
+      const year = today.getFullYear();
+    };
+
     function calculate() {
       const sizes = {
         kostas: 323,
@@ -124,8 +184,8 @@
         barbi: parseFloat(document.getElementById('barbiHours').value) || 0
       };
 
+      const totalHours = Object.values(hours).reduce((a, b) => a + b, 0);
       const totalCost = parseFloat(document.getElementById('totalCost').value);
-      const totalHours = parseFloat(document.getElementById('totalHours').value);
 
       const fixedPercentage = 0.20;
       const variablePercentage = 0.80;
@@ -143,43 +203,46 @@
       const totalWeight = Object.values(weights).reduce((a, b) => a + b, 0);
       const costPerUnit = variableCost / totalWeight;
 
-      const result = {};
+      let fullResult = `<strong>Αποτελέσματα:</strong><br/><br/>`;
+      fullResult += `<b>Συνολικές Ώρες:</b> ${totalHours} ώρες<br/>`;
+      fullResult += `<b>Συνολικό Κόστος:</b> €${totalCost.toFixed(2)}<br/>`;
+      fullResult += `<b>Χωρίς Πάγιο:</b> €${variableCost.toFixed(2)}<br/>`;
+      fullResult += `<b>Πάγιο:</b> €${fixedCost.toFixed(2)}<br/><br/>`;
+
+      finalText = `Results:\n\nTotal Hours: ${totalHours} hrs\nTotal Cost: €${totalCost.toFixed(2)}\nCost without pagio(80%): €${variableCost.toFixed(2)}\nPagio(20%): €${fixedCost.toFixed(2)}\n\n`;
 
       for (let key in sizes) {
         const usageCost = weights[key] * costPerUnit;
         const pagio = (fixedCost * sizes[key]) / 1000;
         const total = usageCost + pagio;
-        result[key] = {
-          usageCost: usageCost.toFixed(2),
-          pagio: pagio.toFixed(2),
-          total: total.toFixed(2)
-        };
+
+        fullResult += `<b>${capitalize(key)}</b><br/>Μέγεθος: ${sizes[key]}<br/>Ώρες: ${hours[key]}<br/>Κόστος χωρίς πάγιο: €${usageCost.toFixed(2)}<br/>Πάγιο: €${pagio.toFixed(2)}<br/><b>Συνολικά: €${total.toFixed(2)}</b><br/><br/>`;
+
+        finalText += `${capitalize(key)}\nSize: ${sizes[key]} \nHours: ${hours[key]}\nCost (without pagio): €${usageCost.toFixed(2)}\nPagio: €${pagio.toFixed(2)}\nTotal amount: €${total.toFixed(2)}\n\n`;
       }
 
-      const display = `
-        <strong>Αποτέλεσμα:</strong><br/><br/>
-        <b>Κώστας</b><br/>
-        Κόστος χωρίς πάγιο: €${result.kostas.usageCost}<br/>
-        Πάγιο: €${result.kostas.pagio}<br/>
-        <b>Συνολικά: €${result.kostas.total}</b><br/><br/>
+      document.getElementById('results').innerHTML = fullResult;
+      document.getElementById("downloadBtn").style.display = "block";
+    }
 
-        <b>Φλίγγερ</b><br/>
-        Κόστος χωρίς πάγιο: €${result.fligger.usageCost}<br/>
-        Πάγιο: €${result.fligger.pagio}<br/>
-        <b>Συνολικά: €${result.fligger.total}</b><br/><br/>
+    function capitalize(str) {
+      return str.charAt(0).toUpperCase() + str.slice(1);
+    }
 
-        <b>Βασίλης</b><br/>
-        Κόστος χωρίς πάγιο: €${result.vasilis.usageCost}<br/>
-        Πάγιο: €${result.vasilis.pagio}<br/>
-        <b>Συνολικά: €${result.vasilis.total}</b><br/><br/>
+    function savePDF() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      doc.setFontSize(12);
+      const lines = doc.splitTextToSize(finalText, 180);
+      doc.text(lines, 10, 10);
 
-        <b>Μπαρμπη</b><br/>
-        Κόστος χωρίς πάγιο: €${result.barbi.usageCost}<br/>
-        Πάγιο: €${result.barbi.pagio}<br/>
-        <b>Συνολικά: €${result.barbi.total}</b>
-      `;
+      const today = new Date();
+      const day = String(today.getDate()).padStart(2, '0');
+      const month = String(today.getMonth() + 1).padStart(2, '0');
+      const year = today.getFullYear();
+      const formattedDate = `${day}-${month}-${year}`;
 
-      document.getElementById('results').innerHTML = display;
+      doc.save(`kastalias15-calculation-${formattedDate}.pdf`);
     }
   </script>
 
